@@ -61,15 +61,23 @@ against real community data.
 
 ## Engineered Features
 
+## Engineered Features
+
 | Feature | Description | Justification |
 |---|---|---|
 | `Elo_Diff` | Absolute skill gap between players | EDA showed larger gap = more Sweeps, smaller gap = more exciting matches |
 | `P1_Elo` / `P2_Elo` | Individual Elo rating at match time | Absolute skill context beyond the gap alone |
 | `WinRate_Diff` | Absolute win rate gap between players | Captures form-based imbalance beyond Elo |
 | `P1_Streak` / `P2_Streak` | Current win streak going into the match | Momentum signal — may predict performance above current Elo |
-| `Is_Exciting` | 1 if Neck & Neck or Comeback, 0 otherwise | Target variable — derived from the EDA retention finding |
+| `Series_Type` | Categorical match narrative — Sweep, Secure, Recovery, Neck & Neck, Comeback | Engineered from set-by-set sequence — source of the target variable |
+| `Is_Exciting` | 1 if Neck & Neck or Comeback, 0 otherwise | Binary target variable derived from Series_Type — directly tied to the EDA retention finding |
 
 All features calculated using only data prior to each match — no leakage.
+
+**Note:** `Series_Type` and `Is_Exciting` are only knowable after a match 
+is played. They are engineered as target variables, not predictors. 
+The model uses pre-match features (Elo, win rate, streak) to predict 
+`Is_Exciting` before the match occurs.
 
 ## Model Progression
 
