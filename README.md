@@ -12,6 +12,19 @@ percentage point difference. The model attempts to predict which
 matchups will produce exciting matches before they are played, enabling 
 Elo-based matchmaking recommendations.
 
+## Current Status (as of July 13)
+**Sprint 1 — Lock the Model: Complete.**
+- Full modeling pipeline built and documented across three notebooks
+- Baseline, simple, and two tuned models compared
+- Leakage prevention explicitly documented and enforced (temporal split, 
+  `TimeSeriesSplit` CV, scaler fit on train only)
+- **Final model selected: Tuned Random Forest** (full feature set, 
+  `GridSearchCV`-tuned), saved as `final_model_rf.pkl`
+
+**Next up — Sprint 2 (due July 17):** refactoring the notebook code into 
+reusable `.py` scripts, adding `requirements.txt`, and building the 
+Streamlit matchmaking app.
+
 ## Stakeholder
 Recreational ping pong players and club organisers who want a structured 
 way to track player progression, measure match quality, and grow an 
@@ -43,9 +56,9 @@ through smarter matchmaking?
 | Folder/File | Purpose |
 |---|---|
 | `notebooks/` | EDA, feature engineering, and modelling notebooks in order |
-| `src/` | Reusable functions for cleaning, features, and modelling |
+| `src/` | Reusable functions for cleaning, features, and modelling *(in progress — Sprint 2)* |
 | `docs/` | Pipeline diagram, stakeholder map, AI-use log |
-| `app/` | Streamlit matchmaking recommendation tool |
+| `app/` | Streamlit matchmaking recommendation tool *(not started — Sprint 2)* |
 | `figures/` | Exported visualisations |
 | `outputs/` | Saved models and metrics tables |
 | `data/raw/` | Original unmodified source data |
@@ -58,8 +71,6 @@ A monthly threshold was chosen because the tournament structure means
 daily and weekly return rates reflect scheduling continuity rather than 
 genuine re-engagement decisions. This threshold should be validated 
 against real community data.
-
-## Engineered Features
 
 ## Engineered Features
 
@@ -81,25 +92,36 @@ The model uses pre-match features (Elo, win rate, streak) to predict
 
 ## Model Progression
 
-| Stage | Model | Purpose |
-|---|---|---|
-| Baseline | DummyClassifier | Establishes minimum benchmark |
-| Simple | Logistic Regression (Elo_Diff only) | Tests strongest single feature |
-| Tuned | Random Forest / XGBoost + GridSearchCV | Optimised full feature set |
+| Stage | Model | Test ROC-AUC | Recall (Exciting) | Status |
+|---|---|---|---|---|
+| Baseline | DummyClassifier | 0.500 | 0.000 | ✅ Done |
+| Simple | Logistic Regression (Elo_Diff only) | 0.800 | 0.665 | ✅ Done |
+| Tuned | Logistic Regression (full features, GridSearchCV) | 0.802 | 0.706 | ✅ Done |
+| **Tuned — Final** | **Random Forest (full features, GridSearchCV)** | **0.794** | **0.765** | ✅ **Selected** |
 
 **Target variable:** `Is_Exciting` — predicting whether a matchup will 
 produce a Neck & Neck or Comeback series before it is played.
 
+**Why Random Forest was selected:** Recall on the exciting class was 
+prioritized over precision, since for a matchmaking tool, missing a 
+genuinely exciting matchup (false negative) is more costly than 
+over-recommending one (false positive). The tuned Random Forest achieved 
+the highest recall (76.5%) while remaining well-generalized (small train/test 
+gap), thanks to `max_depth` and `min_samples_leaf` constraints found via 
+`GridSearchCV`. Precision remains low (~10%) across all models due to 
+severe class imbalance (5.5% exciting rate) — an acknowledged tradeoff 
+given the stakeholder's priority.
+
 ## Weekly Workflow
 
-| Week | Focus |
-|---|---|
-| Week 1 | Problem framing, pipeline design, data audit |
-| Week 2 | Cleaning, EDA, feature engineering, statistical testing |
-| Week 3 | Baseline and simple model |
-| Week 4 | Model tuning and optimisation |
-| Week 5 | Refactoring into .py scripts, Streamlit deployment |
-| Week 6 | Final polish and presentation |
+| Week | Focus | Status |
+|---|---|---|
+| Week 1 | Problem framing, pipeline design, data audit | ✅ Done |
+| Week 2 | Cleaning, EDA, feature engineering, statistical testing | ✅ Done |
+| Week 3 | Baseline and simple model | ✅ Done |
+| Week 4 | Model tuning and optimisation | ✅ Done |
+| Week 5 | Refactoring into .py scripts, Streamlit deployment | 🔜 In progress |
+| Week 6 | Final polish and presentation | ⬜ Not started |
 
 ## Leakage Prevention
 All engineered features are calculated using a sequential pass through 
@@ -112,6 +134,14 @@ The target variable `Is_Exciting` is derived from `Series_Type` which
 is only knowable after a match is played. It is used as a prediction 
 target, never as a predictor.
 
+During model tuning, leakage was additionally controlled by:
+- Using `TimeSeriesSplit` instead of standard k-fold cross-validation, 
+  so validation folds never precede training folds in time
+- Fitting `GridSearchCV` only on training data — the test set was 
+  untouched until final model evaluation
+- Fitting the scaler (`StandardScaler`) only on training data 
+  (`fit_transform` on train, `transform` on test)
+
 ## Limitations
 - Dataset is partially synthetic — real-world validation is required
 - The engagement model used in data generation baked in higher return 
@@ -121,6 +151,8 @@ target, never as a predictor.
   optimal — weekly windows may be more meaningful in a real app context
 - Cold start problem: players with fewer than 20 matches have 
   unreliable Elo and win rate estimates
+- Precision on the exciting class is low (~10%) due to severe class 
+  imbalance — the model over-recommends more than it misses, by design
 - The model predicts match excitement but cannot guarantee it — 
   matchmaking recommendations are probabilistic, not deterministic
 
@@ -131,3 +163,5 @@ target, never as a predictor.
 - Expand Streamlit app into a full community-facing product
 - Model player progression explicitly to personalise matchmaking 
   over time
+- Explore threshold tuning to balance precision and recall depending 
+  on how the app surfaces recommendations
