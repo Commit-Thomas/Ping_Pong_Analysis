@@ -1,0 +1,5 @@
+Model,Train ROC-AUC,Test ROC-AUC,Overfit Gap,Accuracy,Precision (Exc),Recall (Exc),F1 (Exc)
+Baseline (Dummy),0.5,0.5,0.0,0.9569,0.0,0.0,0.0
+Simple LR (Elo_Diff only),0.5006,0.4955,0.0051,0.4974,0.0426,0.497,0.0786
+Tuned LR (Full Features),0.6838,0.7082,-0.0243,0.742,0.0797,0.4726,0.1364
+Tuned RF (Full Features),0.7534,0.7899,-0.0365,0.6964,0.0999,0.7546,0.1765
