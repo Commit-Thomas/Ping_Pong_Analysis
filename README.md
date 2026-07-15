@@ -12,18 +12,18 @@ percentage point difference. The model attempts to predict which
 matchups will produce exciting matches before they are played, enabling 
 Elo-based matchmaking recommendations.
 
-## Current Status (as of July 13)
+## Current Status (as of July 15)
 **Sprint 1 — Lock the Model: Complete.**
-- Full modeling pipeline built and documented across three notebooks
-- Baseline, simple, and two tuned models compared
-- Leakage prevention explicitly documented and enforced (temporal split, 
-  `TimeSeriesSplit` CV, scaler fit on train only)
-- **Final model selected: Tuned Random Forest** (full feature set, 
-  `GridSearchCV`-tuned), saved as `final_model_rf.pkl`
+**Sprint 2 — Build the Artifact: Complete.**
+- Data cleaning and feature engineering refactored out of notebooks into 
+  reusable scripts (`src/data_pipeline.py`, `src/features.py`)
+- `requirements.txt` added, listing exact package versions used
+- Streamlit matchmaking app built and running locally (`app/app.py`), 
+  loading the saved final model and scaler to predict match excitement 
+  probability from player Elo, win rate, and streak
 
-**Next up — Sprint 2 (due July 17):** refactoring the notebook code into 
-reusable `.py` scripts, adding `requirements.txt`, and building the 
-Streamlit matchmaking app.
+**Next up — Sprint 3 (due July 24):** AI-use log, slide deck, Yoodli, 
+and final presentation.
 
 ## Stakeholder
 Recreational ping pong players and club organisers who want a structured 
@@ -56,9 +56,9 @@ through smarter matchmaking?
 | Folder/File | Purpose |
 |---|---|
 | `notebooks/` | EDA, feature engineering, and modelling notebooks in order |
-| `src/` | Reusable functions for cleaning, features, and modelling *(in progress — Sprint 2)* |
-| `docs/` | Pipeline diagram, stakeholder map, AI-use log |
-| `app/` | Streamlit matchmaking recommendation tool *(not started — Sprint 2)* |
+| `src/` | Reusable functions for cleaning (`data_pipeline.py`) and feature engineering (`features.py`) |
+| `docs/` | Pipeline diagram, stakeholder map, AI-use log *(Sprint 3)* |
+| `app/` | Streamlit matchmaking recommendation tool, including the saved model and scaler it loads |
 | `figures/` | Exported visualisations |
 | `outputs/` | Saved models and metrics tables |
 | `data/raw/` | Original unmodified source data |
@@ -76,9 +76,9 @@ against real community data.
 
 | Feature | Description | Justification |
 |---|---|---|
-| `Elo_Diff` | Absolute skill gap between players | EDA showed larger gap = more Sweeps, smaller gap = more exciting matches |
+| `Elo_Diff` | Skill gap between players (P1 Elo − P2 Elo) | EDA showed larger gap = more Sweeps, smaller gap = more exciting matches |
 | `P1_Elo` / `P2_Elo` | Individual Elo rating at match time | Absolute skill context beyond the gap alone |
-| `WinRate_Diff` | Absolute win rate gap between players | Captures form-based imbalance beyond Elo |
+| `WinRate_Diff` | Win rate gap between players (P1 − P2) | Captures form-based imbalance beyond Elo |
 | `P1_Streak` / `P2_Streak` | Current win streak going into the match | Momentum signal — may predict performance above current Elo |
 | `Series_Type` | Categorical match narrative — Sweep, Secure, Recovery, Neck & Neck, Comeback | Engineered from set-by-set sequence — source of the target variable |
 | `Is_Exciting` | 1 if Neck & Neck or Comeback, 0 otherwise | Binary target variable derived from Series_Type — directly tied to the EDA retention finding |
@@ -112,6 +112,19 @@ gap), thanks to `max_depth` and `min_samples_leaf` constraints found via
 severe class imbalance (5.5% exciting rate) — an acknowledged tradeoff 
 given the stakeholder's priority.
 
+## Running the App
+
+```
+cd app
+pip install -r ../requirements.txt
+streamlit run app.py
+```
+
+The app loads `final_model_rf.pkl` and `final_scaler.pkl` (saved in the 
+`app/` folder alongside `app.py`) and predicts the probability that a 
+given matchup will be an exciting match, based on both players' Elo, 
+win rate, and win streak.
+
 ## Weekly Workflow
 
 | Week | Focus | Status |
@@ -120,8 +133,8 @@ given the stakeholder's priority.
 | Week 2 | Cleaning, EDA, feature engineering, statistical testing | ✅ Done |
 | Week 3 | Baseline and simple model | ✅ Done |
 | Week 4 | Model tuning and optimisation | ✅ Done |
-| Week 5 | Refactoring into .py scripts, Streamlit deployment | 🔜 In progress |
-| Week 6 | Final polish and presentation | ⬜ Not started |
+| Week 5 | Refactoring into .py scripts, Streamlit deployment | ✅ Done |
+| Week 6 | Final polish and presentation | 🔜 In progress |
 
 ## Leakage Prevention
 All engineered features are calculated using a sequential pass through 
@@ -149,19 +162,4 @@ During model tuning, leakage was additionally controlled by:
   a known confound in the retention finding
 - Monthly retention threshold is pragmatic rather than theoretically 
   optimal — weekly windows may be more meaningful in a real app context
-- Cold start problem: players with fewer than 20 matches have 
-  unreliable Elo and win rate estimates
-- Precision on the exciting class is low (~10%) due to severe class 
-  imbalance — the model over-recommends more than it misses, by design
-- The model predicts match excitement but cannot guarantee it — 
-  matchmaking recommendations are probabilistic, not deterministic
-
-## Future Improvements
-- Collect real match data from a local club to validate findings
-- Add head-to-head history as a feature
-- Test weekly retention as an alternative engagement threshold
-- Expand Streamlit app into a full community-facing product
-- Model player progression explicitly to personalise matchmaking 
-  over time
-- Explore threshold tuning to balance precision and recall depending 
-  on how the app surfaces recommendations
+- Cold
