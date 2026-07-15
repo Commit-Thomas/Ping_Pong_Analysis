@@ -59,8 +59,8 @@ with col4:
 st.divider()
 
 if st.button("Predict match excitement", type="primary"):
-    elo_diff = abs(p1_elo - p2_elo)
-    winrate_diff = abs(p1_winrate - p2_winrate)
+    elo_diff = p1_elo - p2_elo
+    winrate_diff = p1_winrate - p2_winrate
 
     X = np.array([[elo_diff, p1_elo, p2_elo, winrate_diff, p1_streak, p2_streak]])
     X_scaled = scaler.transform(X)
