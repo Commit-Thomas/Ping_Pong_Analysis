@@ -172,9 +172,8 @@ def engineer_features(df):
     """
     Run the full feature-engineering pipeline in the correct order:
     Elo -> win rate/streak -> target variables.
-
-    df must already be chronologically sorted (see data_pipeline.parse_datetime).
     """
+    df = df.sort_values('DateTime').reset_index(drop=True)
     df = compute_elo(df)
     df = compute_winrate_and_streak(df)
     df = compute_target(df)
